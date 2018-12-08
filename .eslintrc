@@ -1,0 +1,18 @@
+{
+    "extends": [
+        "plugin:prettier/recommended",
+        "plugin:vue/essential",
+        "@vue/prettier"
+    ],
+    "root": true,
+    "env": {
+        "node": true
+    },
+    "rules": {
+        "no-console": "off",
+        "no-debugger": "off"
+    },
+    "parserOptions": {
+        "parser": "babel-eslint"
+    }
+}
