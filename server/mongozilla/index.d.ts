@@ -1,4 +1,4 @@
-declare module MongoZilla {
+export module MongoZilla {
   interface Facade {
     Model: Model.FactoryBuilder;
     Type: Type.Facade;
@@ -6,7 +6,7 @@ declare module MongoZilla {
   }
 }
 
-declare module MongoZilla.Model {
+export module MongoZilla.Model {
   interface Schema {
     /** Connection Name */
     connection?: string;
@@ -50,14 +50,14 @@ declare module MongoZilla.Model {
     refreshed?: Function;
   }
 
-  interface Factory { }
+  interface Factory {}
 
   interface FactoryBuilder {
-    (schema: Schema): Factory
+    (schema: Schema): Factory;
   }
 }
 
-declare module MongoZilla.Type {
+export module MongoZilla.Type {
   interface Facade {
     bool: BooleanChecker;
     string: StringChecker;
@@ -113,7 +113,7 @@ declare module MongoZilla.Type {
 
   interface ValidateResult<T> {
     isValid: Boolean;
-    value: T
+    value: T;
   }
 
   interface IsValue<T> {
@@ -147,10 +147,9 @@ declare module MongoZilla.Type {
   interface OfType<T> {
     (type: any): T;
   }
-
 }
 
-declare module MongoZilla.Connector {
+export module MongoZilla.Connector {
   interface Facade {
     getConnection: (name: String) => Connection;
     createConnection: (name: String, options: ConnectionOptions) => Connection;
@@ -167,14 +166,10 @@ declare module MongoZilla.Connector {
     url: String;
     database: String;
     user: String;
-    password: String
+    password: String;
   }
 }
 
-declare module MongoZilla.Query {
-
-  interface Facade {
-
-  }
-
+export module MongoZilla.Query {
+  interface Facade {}
 }

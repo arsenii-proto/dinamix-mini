@@ -1,4 +1,4 @@
-import { Server, MongoZilla } from "@/index";
+import { Server, MongoZilla } from "./index";
 
 const { Type } = MongoZilla;
 

@@ -1,11 +1,10 @@
-
-declare module DinamixMiniServer {
+export module DinamixMiniServer {
   interface Facade {
     Server: Server.Facade;
   }
 }
 
-declare module DinamixMiniServer.Server {
+export module DinamixMiniServer.Server {
   interface Facade {
     when: {
       open: (callback: Function) => Facade;
@@ -47,23 +46,28 @@ declare module DinamixMiniServer.Server {
   }
 
   interface ConnectionMessageObservable {
-    map: (map: ConnectionMessageObservableCallback) => ConnectionMessageObservable;
-    filter: (filter: ConnectionMessageObservableCallback) => ConnectionMessageObservable;
-    subscribe: (handler: ConnectionMessageObservableCallback) => ConnectionMessageObservable;
+    map: (
+      map: ConnectionMessageObservableCallback
+    ) => ConnectionMessageObservable;
+    filter: (
+      filter: ConnectionMessageObservableCallback
+    ) => ConnectionMessageObservable;
+    subscribe: (
+      handler: ConnectionMessageObservableCallback
+    ) => ConnectionMessageObservable;
   }
 
   interface ConnectionObservableCallback {
-    (connection: Connection): void
+    (connection: Connection): void;
   }
 
   interface MessageObservableCallback {
-    (data: MessageObservableCallbackData): void
+    (data: MessageObservableCallbackData): void;
   }
 
   interface ConnectionMessageObservableCallback {
-    (data: ConnectionMessageObservableCallbackData): void
+    (data: ConnectionMessageObservableCallbackData): void;
   }
-
 
   interface MessageObservableCallbackData {
     connection: Connection;
@@ -75,5 +79,4 @@ declare module DinamixMiniServer.Server {
     message: Object;
     raw: String;
   }
-
 }

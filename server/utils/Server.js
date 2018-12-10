@@ -94,7 +94,8 @@ const closeStream = createStream();
 let connections = [];
 let serverInstance = {
   port: null,
-  opened: null
+  opened: null,
+  retries: 0
 };
 
 /** @type {DinamixMiniServer.Server.Facade} */
@@ -142,14 +143,19 @@ closeStreamInternal.subscribe(() => {
     return;
   }
 
+  if (serverInstance.retries >= 5) {
+    return setTimeout(() => {
+      throw new Error("Server killed by reconect tries limit");
+    });
+  }
+
   const server = new WSServer({ port: serverInstance.port });
 
   connections = [];
-  server.on(
-    "error",
-    error =>
-      server.close() && closeStream.fire({ server: Server, error, msg: "blea" })
-  );
+  server.on("error", error => {
+    server.close();
+    closeStream.fire({ server: Server, error });
+  });
   server.on("connection", (c, r) => {
     const connection = wrapConnection(c, r);
 
@@ -170,13 +176,21 @@ closeStreamInternal.subscribe(() => {
         message
       });
     });
+
+    serverInstance.retries = 0;
   });
 
   openStream.fire(Server);
   process.on("exit", () => server.close());
+  process.on("SIGTERM", () => server.close());
 });
 
-closeStream.subscribe(() => closeStreamInternal.fire());
+closeStream.subscribe(() => {
+  setTimeout(() => {
+    closeStreamInternal.fire();
+    serverInstance.retries++;
+  }, 300);
+});
 
 openStream.subscribe(() => {
   serverInstance.opened = true;

@@ -1,5 +1,4 @@
 import { expect } from "chai";
-
 import { Server, MongoZilla } from "../../index";
 
 describe("@/index.js", () => {

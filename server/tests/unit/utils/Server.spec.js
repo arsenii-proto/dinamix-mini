@@ -26,8 +26,15 @@ describe("@/utils/Server.js", () => {
       expect(Server.when).to.have.property("close");
     });
     describe("property open", () => {
-      it("should be an Observer", () => {
+      it("should be an Function", () => {
         const observer = Server.when.open;
+
+        expect(observer).to.be.a("function");
+      });
+    });
+    describe("property connection", () => {
+      it("should be an Observer", () => {
+        const observer = Server.when.connection;
 
         expect(observer).to.be.a("object");
         expect(isObserver(observer)).to.be.true;

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Page Title</title>
+  </head>
+  <body>
+    <script>
+      const NestedModel = function() {};
+      const schemaAA = {
+        colection: "aaaas",
+        props: {
+          tid: {
+            $type: Number,
+            $required: true,
+            $min: 10,
+            $max: 20,
+            $default: 16,
+            $in: [10, 12, 14, 16, 18, 20],
+            $validator: tid => {
+              return tid % 2 == 0;
+            }
+          },
+          first_name: {
+            $type: String,
+            $required: true,
+            $default: "Arsenii",
+            $in: ["Arsenii", "Cojocari"],
+            $minLength: 16,
+            $maxLength: 46,
+            $validator: firstName => {
+              return /^[A-Z].+$/.test(firstName);
+            },
+            $mapper: firstName => {
+              return (
+                firstName.substr(0, 1).toLocaleUpperCase() +
+                firstName.substr(1, firstName.length).toLocaleLowerCase()
+              );
+            }
+          },
+          surname: {
+            $type: String,
+            $required: true,
+            $in: ["male", "female"]
+          },
+          middle_name: String,
+          sex: {
+            $type: String,
+            $required: true,
+            $in: ["male", "female"]
+          }
+        },
+        methods: {}
+      };
+
+      const isType = (T, v) =>
+        v instanceof T ||
+        (T.name && Object.prototype.toString.apply(v) === `[object ${T.name}]`);
+
+      const getSchemaValidator = (schema, key) => {
+        let getValue = value => (key ? value[key] : value);
+        const validators = [];
+        const mappers = [];
+        const valid = value =>
+          validators.reduce((all, validator) => all && validator(value), true);
+        const map = value =>
+          valid(value) &&
+          mappers.reduce((mapped, mapper) => mapper(mapped), value);
+        const validator = Object.freeze({
+          valid,
+          map
+        });
+
+        if (!isType(Object, schema)) return validator;
+
+        if ([String, Number, Boolean].includes(schema)) {
+          validators.push(value => isType(schema, getValue(value)));
+
+          return validator;
+        }
+
+        if (isType(Array, schema)) {
+          const arrayValidator = getSchemaValidator(schema[0]);
+          const getOldValue = getValue;
+          getValue = value => getOldValue(value) || [];
+
+          validators.push(value => isType(Array, getValue(value)));
+
+          if (!key) {
+            validators.push(value =>
+              getValue(value).reduce(
+                (all, it) => all && arrayValidator.valid(it),
+                true
+              )
+            );
+            mappers.push(value =>
+              getValue(value).map(it => arrayValidator.map(it))
+            );
+          } else {
+            validators.push(value =>
+              getValue(value).reduce(
+                (all, it) => all && arrayValidator.valid(it),
+                true
+              )
+            );
+            mappers.push(value => ({
+              ...value,
+              [key]: getValue(value).map(it => arrayValidator.map(it))
+            }));
+          }
+
+          return validator;
+        }
+
+        if ("$type" in schema) {
+          if ("$default" in schema) {
+            const getOldValue = getValue;
+
+            getValue = value =>
+              getOldValue(value) ||
+              (schema.$default instanceof Function
+                ? schema.$default()
+                : schema.$default);
+
+            if (!key) {
+              mappers.push(value => getValue(value));
+            } else {
+              mappers.push(value => ({
+                ...value,
+                [key]: getValue(value)
+              }));
+            }
+          } else if ("$required" in schema && schema.$required) {
+            if (key) {
+              validators.push(value => key in value);
+            }
+          }
+
+          validators.push(value => isType(schema.$type, getValue(value)));
+
+          if (Number === schema.$type) {
+            if ("$min" in schema) {
+              validators.push(value => getValue(value) >= schema.$min);
+            }
+            if ("$max" in schema) {
+              validators.push(value => getValue(value) <= schema.$max);
+            }
+          }
+
+          if ([String, Array, []].includes(schema.$type)) {
+            if ("$minLength" in schema) {
+              validators.push(
+                value => getValue(value).length >= schema.$minLength
+              );
+            }
+            if ("$maxLength" in schema) {
+              validators.push(
+                value => getValue(value).length <= schema.$maxLength
+              );
+            }
+          }
+
+          if ("$in" in schema && isType(Array, schema.$in)) {
+            validators.push(value => schema.$in.includes(getValue(value)));
+          }
+
+          if ("$validator" in schema && isType(Function, schema.$validator)) {
+            validators.push(value =>
+              Boolean(schema.$validator(getValue(value)))
+            );
+          }
+
+          if ("$mapper" in schema && isType(Function, schema.$mapper)) {
+            if (!key) {
+              mappers.push(value => schema.$mapper(getValue(value)));
+            } else {
+              mappers.push(value => ({
+                ...value,
+                [key]: schema.$mapper(getValue(value))
+              }));
+            }
+          }
+
+          return validator;
+        }
+
+        if (isType(NestedModel, schema)) {
+          const nestedValidator = schema.validator;
+
+          validators.push(value => nestedValidator.valid(getValue(value)));
+          if (!key) {
+            mappers.push(value =>
+              value.map(it => nestedValidator.map(getValue(it)))
+            );
+          } else {
+            mappers.push(value => ({
+              ...value,
+              [key]: nestedValidator.map(value[key])
+            }));
+          }
+          return validator;
+        }
+
+        const validatorNested = getValidator(schema);
+
+        validators.push(value => validatorNested.valid(getValue(value)));
+
+        if (!key) {
+          mappers.push(value => validatorNested.map(getValue(value)));
+        } else {
+          mappers.push(value => ({
+            ...value,
+            [key]: validatorNested.map(value[key])
+          }));
+        }
+        return validator;
+      };
+
+      const getValidator = schema => {
+        const validators = [];
+        const mappers = [];
+        const valid = value =>
+          validators.reduce((all, validator) => all && validator(value), true);
+        const map = value =>
+          valid(value) &&
+          mappers.reduce((mapped, mapper) => mapper(mapped), value);
+
+        Object.keys(schema).forEach(key => {
+          const keyValidator = getSchemaValidator(schema[key], key);
+
+          validators.push(keyValidator.valid);
+          mappers.push(keyValidator.map);
+        });
+
+        return Object.freeze({
+          valid,
+          map
+        });
+      };
+    </script>
+  </body>
+</html>
